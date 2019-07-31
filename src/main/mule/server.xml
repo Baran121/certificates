@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:oauth="http://www.mulesoft.org/schema/mule/oauth"
+	xmlns:oauth2-provider="http://www.mulesoft.org/schema/mule/oauth2-provider"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:crypto="http://www.mulesoft.org/schema/mule/crypto" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/crypto http://www.mulesoft.org/schema/mule/crypto/current/mule-crypto.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/oauth2-provider http://www.mulesoft.org/schema/mule/oauth2-provider/current/mule-oauth2-provider.xsd
+http://www.mulesoft.org/schema/mule/oauth http://www.mulesoft.org/schema/mule/oauth/current/mule-oauth.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="95913090-cc7f-4e1d-9809-8bb3ea45297b" >
+		<http:listener-connection host="0.0.0.0" port="8090"/>
+	</http:listener-config>
+	<crypto:jce-config name="Crypto_Jce" doc:name="Crypto Jce" doc:id="f48d1ca7-2e61-4c04-9e34-09ab60fe6e35" keystore="C:\Users\m1035121\certificates\encryption.jceks" type="JCEKS" password="changeit" />
+	<os:object-store name="Object_store" doc:name="Object store" doc:id="39b71dd6-f2a8-4d64-bc37-bbc8038083d5" entryTtlUnit="MINUTES" />
+	<crypto:jce-config name="Crypto_Jce1" doc:name="Crypto Jce" doc:id="c96d7a21-dcb1-4f14-97e0-c95f0f78a23f" keystore="C:\Users\m1035121\certificates\encryption.pub.jceks" type="JCEKS" password="changeit" />
+	<crypto:jce-config name="Crypto_Jce2_Symetric" doc:name="Crypto Jce" doc:id="dc9d9f76-549e-4496-94d7-a4f29f8ed586" keystore="C:\Users\m1035121\certificates\aes_aes.jcks" type="JCEKS" password="changeit" >
+		<crypto:jce-key-infos >
+			<crypto:jce-symmetric-key-info keyId="aseKellton" alias="aes1" password="aes" />
+		</crypto:jce-key-infos>
+	</crypto:jce-config>
+	<crypto:jce-config name="Crypto_Jce2-blowfish" doc:name="Crypto Jce" doc:id="3ccebce6-9e61-412f-9781-db4302c5e8b2" keystore="C:\Users\m1035121\certificates\aes_aes.jcks" type="JCEKS" password="changeit">
+		<crypto:jce-key-infos >
+			<crypto:jce-symmetric-key-info keyId="askBaranee" alias="blowfish" password="blowfish" />
+		</crypto:jce-key-infos>
+	</crypto:jce-config>
+	<flow name="assemtric-retrieve-object-store-decrypt" doc:id="24bbacdd-44c1-4763-8768-c4e667eeb157" >
+		<http:listener doc:name="Listener" doc:id="20563c69-6f3d-4425-a8c8-5416cd065a7a" config-ref="HTTP_Listener_config" path="Asymmetric/decrypt"/>
+		<os:retrieve doc:name="Retrieve-object-store" doc:id="5fd4939e-f50e-4703-ad03-f0573637b812" key="obstore" objectStore="Object_store" />
+		<logger level="INFO" doc:name="Logger" doc:id="184e5cd0-6625-4855-8bd2-b99fd37fea47" message="#[payload]" />
+		<crypto:jce-decrypt doc:name="Jce decrypt" doc:id="40227ec4-ca03-4880-94f6-0d9e9a025171" config-ref="Crypto_Jce" algorithm="RSA">
+			<crypto:jce-key-info>
+				<crypto:jce-asymmetric-key-info keyId="crypt" alias="encryption" password="changeit" />
+			</crypto:jce-key-info>
+		</crypto:jce-decrypt>
+	</flow>
+	<flow name="asemtric_encrypt_objectstore" doc:id="1a2112e7-1e4a-4e15-a7b4-8f181db2749d">
+		<http:listener doc:name="Listener" doc:id="73a678eb-557c-47d3-a87b-8fde54a15093" config-ref="HTTP_Listener_config" path="Asymmetric/encrypt" />
+		<logger level="INFO" doc:name="Logger" doc:id="9faf9729-d447-49f3-aecd-02aafe684753" message="#[payload]" />
+		<crypto:jce-encrypt doc:name="Jce encrypt" doc:id="2ca2c327-0e4c-4747-b2d4-afa3b4447675" config-ref="Crypto_Jce1" algorithm="RSA" outputMimeType="text/csv">
+			<crypto:jce-key-info>
+				<crypto:jce-asymmetric-key-info keyId="crypto" alias="encryption" password="changeit" />
+			</crypto:jce-key-info>
+		</crypto:jce-encrypt>
+		<logger level="INFO" doc:name="Logger" doc:id="d4556403-6075-4fbe-a4c5-74672d70c684" message="#[payload]"/>
+		<os:store doc:name="Store" doc:id="5c0a870b-1947-4594-a194-c58c0a294262" key="obstore" objectStore="Object_store" />
+	</flow>
+	<flow name="Symetric-blowfish" doc:id="f405f45e-37d2-49b4-8a0b-012860236159" >
+		<http:listener doc:name="Listener" doc:id="027e40b7-1727-47f7-883e-5eb0a55212ae" config-ref="HTTP_Listener_config" path="blowfish"/>
+		<crypto:jce-encrypt doc:name="Jce encrypt" doc:id="620328e5-a559-4108-93de-fe79e171468a" config-ref="Crypto_Jce2-blowfish" algorithm="Blowfish" keyId="askBaranee">
+		</crypto:jce-encrypt>
+		<crypto:jce-decrypt doc:name="Jce decrypt" doc:id="4d5c63a0-953c-4c03-981b-c38cbcadff94" config-ref="Crypto_Jce2-blowfish" algorithm="Blowfish" keyId="askBaranee"/>
+	</flow>
+	<flow name="decrypt" doc:id="0ac36e3a-2874-41d0-bacf-ff21433031bd" >
+		<http:listener doc:name="Listener" doc:id="ee36f41d-21a4-406e-90a1-2b68ba6ca013" config-ref="HTTP_Listener_config" path="decrypt"/>
+		<crypto:jce-decrypt doc:name="Jce decrypt" doc:id="fef12530-6dba-4446-b064-294bd7340941" config-ref="Crypto_Jce" algorithm="RSA" >
+			<crypto:jce-key-info >
+				<crypto:jce-asymmetric-key-info keyId="crypt" alias="encryption" password="changeit" />
+			</crypto:jce-key-info>
+		</crypto:jce-decrypt>
+	</flow>
+	<flow name="Symetric-AES" doc:id="15bff979-075b-4240-9ff1-8dc9d217f626" >
+		<http:listener doc:name="Listener" doc:id="4ac181d2-86e1-4a4c-9420-9c8820c59554" config-ref="HTTP_Listener_config" path="acs" />
+		<crypto:jce-encrypt doc:name="Jce encrypt" doc:id="04ed7ef6-3a65-4fb9-b2a1-01e6f369e8de" config-ref="Crypto_Jce2_Symetric" algorithm="AES" keyId="aseKellton" />
+		<crypto:jce-decrypt doc:name="Jce decrypt" doc:id="95d46dce-b53f-478e-b732-aabe24b3f58c" config-ref="Crypto_Jce2_Symetric" algorithm="AES" keyId="aseKellton" />
+	</flow>
+</mule>
